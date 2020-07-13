@@ -8,7 +8,9 @@ const app = express();
 app.use(cors());
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT);
+app.listen(PORT, () => {
+  console.log(`listening 0n ${PORT}`);
+});
 
 
 
@@ -20,7 +22,7 @@ app.listen(PORT);
 
 
 
-app.get('*', (request, responce) => {
+app.get('*', (request, response) => {
 
-  responce.status(404).send('Page not Found');
+  response.status(404).send('Page not Found');
 });

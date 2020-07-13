@@ -14,6 +14,7 @@ app.listen(PORT);
 // });
 
 app.get('/location', (request, response) => {
+  console.log
   try{
 
     let city = request.query.city;
@@ -32,9 +33,9 @@ app.get('/location', (request, response) => {
 function Location(input, locData)
 {
   this.search_query = input;
-  this.formatted_query = locData.display_name;
-  this.latitude = locData.lat;
-  this.longitude = locData.lon;
+  this.formatted_query = locData[0].display_name;
+  this.latitude = locData[0].lat;
+  this.longitude = locData[0].lon;
 }
 
 // {

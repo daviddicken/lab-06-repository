@@ -54,33 +54,20 @@ app.get('/weather', (request, response) => {
   weatherData.data.forEach(day => {
     new Weather(day);
   });
-
   response.send(weatherArray);
-
-  //const obj = new Weather(weatherData);
-  // [
-  //   {
-  //     "forecast": "Partly cloudy until afternoon.",
-  //     "time": "Mon Jan 01 2001"
-  //   },
-  //   {
-  //     "forecast": "Mostly cloudy in the morning.",
-  //     "time": "Tue Jan 02 2001"
-  //   },
-
 });
 
+//     "forecast": "Partly cloudy until afternoon.",
+//     "time": "Mon Jan 01 2001"
 function Weather(weatherInfo)
 {
-  this.foecast = weatherInfo.weather.description;
-  // thisccc.forecast = weatherInfo.data[0].weather.description;
-  let b = weatherInfo.valid_date;
-  b = b.split(' ');
-  let newDateString = `${b[0]} ${b[1]} ${b[2]} ${b[3]}`
-  //console.log('bbb',b);
-  this.time = newDateString;
-  // this.time = weatherInfo.data[0].valid_date;
-  //console.log(weatherInfo.valid_date);
+  this.forecast = weatherInfo.weather.description;
+  this.time = weatherInfo.valid_date;
+
+  // let a = weatherInfo.valid_date;
+  // b = a.split(' ');
+  // let newDateString = `${b[0]} ${b[1]} ${b[2]} ${b[3]}`;
+  // this.time = newDateString;
   weatherArray.push(this);
 }
 

@@ -41,7 +41,7 @@ app.get('/weather', (request, response) => {
   // weatherData.data.forEach(day => {
   //   new Weather(day);
   // });
-  //console.log('newweatherArr', newWeatherArr);
+  console.log('newweatherArr', newWeatherArr);
   response.send(newWeatherArr);
 });
 

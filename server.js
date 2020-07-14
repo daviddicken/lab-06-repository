@@ -7,7 +7,7 @@ require('dotenv').config();
 const app = express();
 app.use(cors());
 
-const weatherArray = [];
+//const weatherArray = [];
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`listening 0n ${PORT}`);
@@ -34,17 +34,22 @@ app.get('/weather', (request, response) => {
 
   let weatherData = require('./data/weather.json');
 
-  weatherData.data.forEach(day => {
-    new Weather(day);
-  });
-  response.send(weatherArray);
+  const newWeatherArr = weatherData.data.maps(day => {
+    return new Weather(day);
+  })
+
+  // weatherData.data.forEach(day => {
+  //   new Weather(day);
+  // });
+  //console.log('newweatherArr', newWeatherArr);
+  response.send(newWeatherArr);
 });
 
 function Weather(weatherInfo)
 {
   this.forecast = weatherInfo.weather.description;
   this.time = new Date(weatherInfo.valid_date).toDateString();
-  weatherArray.push(this);
+  //weatherArray.push(this);
 }
 
 function Location(input, locData)

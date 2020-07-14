@@ -1,47 +1,52 @@
 'use strict';
 
 const express = require('express');
+const app = express();
 const cors = require('cors');
+const superagent = require('superagent');
 require('dotenv').config();
 
-const app = express();
 app.use(cors());
 
-//const weatherArray = [];
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`listening 0n ${PORT}`);
 });
 
-app.get('/location', (request, response) => {
-  try{
 
-    let city = request.query.city;
-    let locData = require('./data/location.json');
-    const obj = new Location(city, locData);
 
-    response.send(obj);
+app.get('/location', handler);
 
-  }catch(error)
-  {
-    console.log('ERROR:', error);
-    response.status(500).send('There has been an error.. RUN!!!');
+function handler(req, res)
+{
+  let city = req.query.city;
+  //let locData = require('./data/location.json');
+  let url = 'https://us1.locationiq.com/v1/search.php';
+
+  let queryParams = {
+    key: process.env.GEOCODE_API_KEY,
+    q: city,
+    format: 'json',
+    limit: 1
   }
-})
 
+  superagent.get(url).query(queryParams).then(results => {
+    let locData = results.body;
+    const obj = new Location(city, locData);
+    res.send(obj);
+  }).catch((error)=> {
+    console.log('ERROR:', error);
+    res.status(500).send('There has been an error.. RUN!!!');
+  });
+}
 //==========================================
 app.get('/weather', (request, response) => {
 
   let weatherData = require('./data/weather.json');
 
-  const newWeatherArr = weatherData.data.maps(day => {
+  const newWeatherArr = weatherData.data.map(day => {
     return new Weather(day);
   })
-
-  // weatherData.data.forEach(day => {
-  //   new Weather(day);
-  // });
-  console.log('newweatherArr', newWeatherArr);
   response.send(newWeatherArr);
 });
 
@@ -49,7 +54,6 @@ function Weather(weatherInfo)
 {
   this.forecast = weatherInfo.weather.description;
   this.time = new Date(weatherInfo.valid_date).toDateString();
-  //weatherArray.push(this);
 }
 
 function Location(input, locData)

@@ -1,19 +1,17 @@
 'use strict';
 
-const weatherArray = [];
 const express = require('express');
 const cors = require('cors');
-const { request, response } = require('express');
 require('dotenv').config();
 
 const app = express();
 app.use(cors());
 
+const weatherArray = [];
 const PORT = process.env.PORT || 3001;
-app.listen(PORT);
-// , () => {
-// console.log(`listening 0n ${PORT}`);
-// });
+app.listen(PORT, () => {
+  console.log(`listening 0n ${PORT}`);
+});
 
 app.get('/location', (request, response) => {
   try{
@@ -31,21 +29,6 @@ app.get('/location', (request, response) => {
   }
 })
 
-//console.log('outside everything');
-// let weatherData = require('./data/weather.json');
-
-// weatherData.data.forEach(day => {
-//   new Weather(day);
-// });
-
-// console.log(weatherArray);
-// const obj = new Weather(weatherData);
-
-// console.log('obj:',obj)
-// console.log('weatherdata:',weatherData);
-// console.log('[0]:',weatherData.data[0].weather.description);
-
-
 //==========================================
 app.get('/weather', (request, response) => {
 
@@ -57,16 +40,10 @@ app.get('/weather', (request, response) => {
   response.send(weatherArray);
 });
 
-//     "forecast": "Partly cloudy until afternoon.",
-//     "time": "Mon Jan 01 2001"
 function Weather(weatherInfo)
 {
   this.forecast = weatherInfo.weather.description;
-  this.time = weatherInfo.valid_date;
-  // let a = weatherInfo.valid_date;
-  // let b = a.split(' ');
-  // let newDateString = `${b[0]} ${b[1]} ${b[2]} ${b[3]}`;
-  // this.time = newDateString;
+  this.time = new Date(weatherInfo.valid_date).toDateString();
   weatherArray.push(this);
 }
 
@@ -77,17 +54,6 @@ function Location(input, locData)
   this.latitude = locData[0].lat;
   this.longitude = locData[0].lon;
 }
-
-// {
-//   "search_query": "seattle",
-//   "formatted_query": "Seattle, WA, USA",
-//   "latitude": "47.606210",
-//   "longitude": "-122.332071"
-// }
-
-
-
-
 
 // response.status(200).send(weatherArray);
 

@@ -62,12 +62,14 @@ app.get('/weather', (request, response) => {
 function Weather(weatherInfo)
 {
   this.forecast = weatherInfo.weather.description;
-  this.time = weatherInfo.valid_date;
+  // this.time = weatherInfo.valid_date;
 
-  // let a = weatherInfo.valid_date;
-  // b = a.split(' ');
-  // let newDateString = `${b[0]} ${b[1]} ${b[2]} ${b[3]}`;
-  // this.time = newDateString;
+  let a = weatherInfo.valid_date;
+  let b = a.split(' ');
+  let newDateString = `${b[0]} ${b[1]} ${b[2]} ${b[3]}`;
+  this.time = newDateString;
+
+
   weatherArray.push(this);
 }
 

@@ -1,7 +1,9 @@
 'use strict';
 
+const weatherArray = [];
 const express = require('express');
 const cors = require('cors');
+const { request, response } = require('express');
 require('dotenv').config();
 
 const app = express();
@@ -29,12 +31,65 @@ app.get('/location', (request, response) => {
   }
 })
 
+//console.log('outside everything');
+// let weatherData = require('./data/weather.json');
+
+// weatherData.data.forEach(day => {
+//   new Weather(day);
+// });
+
+// console.log(weatherArray);
+// const obj = new Weather(weatherData);
+
+// console.log('obj:',obj)
+// console.log('weatherdata:',weatherData);
+// console.log('[0]:',weatherData.data[0].weather.description);
+
+
+//==========================================
+app.get('/weather', (request, response) => {
+
+  let weatherData = require('./data/weather.json');
+
+  weatherData.data.forEach(day => {
+    new Weather(day);
+  });
+
+  response.send(weatherArray);
+
+  //const obj = new Weather(weatherData);
+  // [
+  //   {
+  //     "forecast": "Partly cloudy until afternoon.",
+  //     "time": "Mon Jan 01 2001"
+  //   },
+  //   {
+  //     "forecast": "Mostly cloudy in the morning.",
+  //     "time": "Tue Jan 02 2001"
+  //   },
+
+});
+
+function Weather(weatherInfo)
+{
+  this.foecast = weatherInfo.weather.description;
+  // thisccc.forecast = weatherInfo.data[0].weather.description;
+  let b = weatherInfo.valid_date;
+  b = b.split(' ');
+  let newDateString = `${b[0]} ${b[1]} ${b[2]} ${b[3]}`
+  //console.log('bbb',b);
+  this.time = newDateString;
+  // this.time = weatherInfo.data[0].valid_date;
+  //console.log(weatherInfo.valid_date);
+  weatherArray.push(this);
+}
+
 function Location(input, locData)
 {
   this.search_query = input;
-  this.formatted_query = locData.display_name;
-  this.latitude = locData.lat;
-  this.longitude = locData.lon;
+  this.formatted_query = locData[0].display_name;
+  this.latitude = locData[0].lat;
+  this.longitude = locData[0].lon;
 }
 
 // {
@@ -48,7 +103,7 @@ function Location(input, locData)
 
 
 
-//response.status(200).send(array); ????
+// response.status(200).send(weatherArray);
 
 app.get('*', (request, response) => {
 

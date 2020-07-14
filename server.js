@@ -68,6 +68,8 @@ function Weather(weatherInfo)
   let b = a.split(' ');
   let newDateString = `${b[0]} ${b[1]} ${b[2]} ${b[3]}`;
   this.time = newDateString;
+
+
   weatherArray.push(this);
 }
 

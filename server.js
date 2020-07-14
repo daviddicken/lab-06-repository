@@ -32,13 +32,13 @@ app.get('/location', (request, response) => {
 })
 
 //console.log('outside everything');
-let weatherData = require('./data/weather.json');
+// let weatherData = require('./data/weather.json');
 
-weatherData.data.forEach(day => {
-  new Weather(day);
-});
+// weatherData.data.forEach(day => {
+//   new Weather(day);
+// });
 
-console.log(weatherArray);
+// console.log(weatherArray);
 // const obj = new Weather(weatherData);
 
 // console.log('obj:',obj)

@@ -72,10 +72,15 @@ app.get('/weather', (request, response) => {
 
 function Weather(weatherInfo)
 {
-  this.forecast = weatherInfo.weather.description;
-  // this.forecast = weatherInfo.data[0].weather.description;
-  this.time = weatherInfo.valid_date;
+  this.foecast = weatherInfo.weather.description;
+  // thisccc.forecast = weatherInfo.data[0].weather.description;
+  let b = weatherInfo.valid_date;
+  b = b.split(' ');
+  let newDateString = `${b[0]} ${b[1]} ${b[2]} ${b[3]}`
+  //console.log('bbb',b);
+  this.time = newDateString;
   // this.time = weatherInfo.data[0].valid_date;
+  //console.log(weatherInfo.valid_date);
   weatherArray.push(this);
 }
 
@@ -98,7 +103,7 @@ function Location(input, locData)
 
 
 
-//response.status(200).send(array); ????
+// response.status(200).send(weatherArray);
 
 app.get('*', (request, response) => {
 

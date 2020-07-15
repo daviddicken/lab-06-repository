@@ -1,68 +1,97 @@
 'use strict';
 
 const express = require('express');
+const app = express();
 const cors = require('cors');
+const superagent = require('superagent');
+
 require('dotenv').config();
 
-const app = express();
 app.use(cors());
 
-//const weatherArray = [];
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`listening 0n ${PORT}`);
 });
 
-app.get('/location', (request, response) => {
-  try{
 
-    let city = request.query.city;
-    let locData = require('./data/location.json');
-    const obj = new Location(city, locData);
+//========= location ==================
+app.get('/location', handler);
 
-    response.send(obj);
+function handler(req, res)
+{
+  let city = req.query.city;
+  let url = 'https://us1.locationiq.com/v1/search.php';
 
-  }catch(error)
-  {
-    console.log('ERROR:', error);
-    response.status(500).send('There has been an error.. RUN!!!');
+  let queryParams = {
+    key: process.env.GEOCODE_API_KEY,
+    q: city,
+    format: 'json',
+    limit: 1
   }
-})
 
-//==========================================
-app.get('/weather', (request, response) => {
+  superagent.get(url).query(queryParams).then(results => {
+    //console.log('result***', results.body[0].lat);
+    let locData = results.body[0];
+    const obj = new Location(city, locData);
+    res.send(obj);
+  }).catch((error)=> {
+    console.log('ERROR:', error);
+    res.status(500).send('There has been an error.. RUN!!!');
+  });
+}
+// =============================================
+//================= Weather =========================
+app.get('/weather', (req, res) =>
+{
 
-  let weatherData = require('./data/weather.json');
+  //console.log('rep.querry....',req.query);
+  let city = req.query.search_query;
 
-  const newWeatherArr = weatherData.data.maps(day => {
-    return new Weather(day);
-  })
+  let url = 'http://api.weatherbit.io/v2.0/forecast/daily';
 
-  // weatherData.data.forEach(day => {
-  //   new Weather(day);
-  // });
-  console.log('newweatherArr', newWeatherArr);
-  response.send(newWeatherArr);
+  let queryParams =
+  {
+    key: process.env.WEATHER_API_KEY,
+    city: city,
+    //format: 'json',
+    days: 8
+  }
+
+
+  superagent.get(url).query(queryParams).then(day =>
+  {
+    //console.log('day**********', day.body.data[0].valid_date);
+    const newWeatherArr = day.body.data.map(anotherDay =>
+    {
+      //console.log('DAY!!!!', anotherDay);
+      return new Weather(anotherDay);
+    });
+    //console.log('weatherArrau@@@@@@@@@@..', newWeatherArr);
+    res.send(newWeatherArr);
+  });
 });
 
-function Weather(weatherInfo)
+function Weather(info)
 {
-  this.forecast = weatherInfo.weather.description;
-  this.time = new Date(weatherInfo.valid_date).toDateString();
-  //weatherArray.push(this);
+  this.forecast = info.weather.description;
+  this.time = new Date(info.valid_date).toDateString();
 }
 
+
+
+//============================================
+//============================================
 function Location(input, locData)
 {
   this.search_query = input;
-  this.formatted_query = locData[0].display_name;
-  this.latitude = locData[0].lat;
-  this.longitude = locData[0].lon;
+  this.formatted_query = locData.display_name;
+  this.latitude = locData.lat;
+  this.longitude = locData.lon;
 }
 
-// response.status(200).send(weatherArray);
+// res.status(200).send(weatherArray);
 
-app.get('*', (request, response) => {
-
-  response.status(404).send('Page not Found');
+app.get('*', (req, res) => {
+  res.status(404).send('Page not Found');
 });

@@ -49,10 +49,9 @@ function handler(req, res)
 
   client.query(searchString, safeValues).then(place =>
   {
-    //
+    // Got some amazing help from Chance here:
     if(place.rowCount > 0)
     {
-      console.log('place.rows[0]..........', place.rows[0]);
       res.send(place.rows[0]);
     }else
     {
@@ -73,12 +72,14 @@ function handler(req, res)
         adder(obj);
         res.send(obj);
 
-      }).catch((error)=>
-      {
+      }).catch((error)=>{
         console.log('ERROR:', error);
         res.status(500).send('There has been an error.. RUN!!!');
       });
     }
+  }).catch((err) =>{
+    console.log('Error:', err);
+    res.status(500).send('There has been a error in the query...');
   })
 }
 //================= Weather ================

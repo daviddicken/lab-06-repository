@@ -5,44 +5,86 @@ const cors = require('cors');
 const superagent = require('superagent');
 const app = express();
 require('dotenv').config();
+const pg = require('pg');
+//---------------------------------------
+const client = new pg.Client(process.env.DATABASE_URL)
+client.on('error', err =>
+{
+  console.log('Error was:', err)
+})
 
+//---------------------------------------
 app.use(cors());
 
 const PORT = process.env.PORT || 3001;
 
-app.listen(PORT, () =>
+client.connect().then(() =>
 {
-  console.log(`listening 0n ${PORT}`);
-});
+  app.listen(PORT, () => console.log(`listening 0n ${PORT}`));
+}).catch(err => console.log('Error connecting:', err))
 
+// rewrite and remove these variables
 let lattitude;
 let longitude;
+
+//========= add to database ==========
+// app.get('/add', adder)
+
+function adder(obj)
+{
+  let search_query = obj.search_query;
+  let formatted_query = obj.formatted_query;
+  let lat = obj.latitude;
+  let lon = obj.longitude;
+
+  let sql = 'INSERT INTO cities (city, formatted_query, lattitude, longitude) VALUES ($1, $2, $3, $4);';
+  let safeValues = [search_query, formatted_query, lat, lon];
+
+  client.query(sql, safeValues);
+}
 
 //========= location ==================
 app.get('/location', handler);
 
 function handler(req, res)
 {
-  let city = req.query.city;
-  let url = 'https://us1.locationiq.com/v1/search.php';
+  let city = req.query.city; // input from user valid city
 
-  let queryParams = {
-    key: process.env.GEOCODE_API_KEY,
-    q: city,
-    format: 'json',
-    limit: 1
-  }
 
-  superagent.get(url).query(queryParams).then(results =>
+  let searchString = 'SELECT * FROM cities WHERE search_query=$1;'; //if broken change back to city
+  let safeValues = [city];
+
+  client.query(searchString, safeValues).then(place =>
   {
-    let locData = results.body[0];
-    const obj = new Location(city, locData);
-    res.send(obj);
+    console.log('place......', place);
 
-  }).catch((error)=> {
-    console.log('ERROR:', error);
-    res.status(500).send('There has been an error.. RUN!!!');
-  });
+    if(place.rowCount > 0){
+      res.send(place.rows[0]);
+
+    }else{
+
+      let url = 'https://us1.locationiq.com/v1/search.php';
+
+      let queryParams = {
+        key: process.env.GEOCODE_API_KEY,
+        q: city,
+        format: 'json',
+        limit: 1
+      }
+
+      superagent.get(url).query(queryParams).then(results =>
+      {
+        let locData = results.body[0];
+        const obj = new Location(city, locData);
+        adder(obj);
+        res.send(obj);
+
+      }).catch((error)=> {
+        console.log('ERROR:', error);
+        res.status(500).send('There has been an error.. RUN!!!');
+      });
+    }
+  })
 }
 
 //================= Weather ================

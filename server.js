@@ -23,12 +23,7 @@ client.connect().then(() =>
   app.listen(PORT, () => console.log(`listening 0n ${PORT}`));
 }).catch(err => console.log('Error connecting:', err))
 
-// rewrite and remove these variables
-let lattitude;
-let longitude;
-
 //========= add to database ==========
-// app.get('/add', adder)
 
 function adder(obj)
 {
@@ -37,7 +32,7 @@ function adder(obj)
   let lat = obj.latitude;
   let lon = obj.longitude;
 
-  let sql = 'INSERT INTO cities (city, formatted_query, lattitude, longitude) VALUES ($1, $2, $3, $4);';
+  let sql = 'INSERT INTO cities (search_query, formatted_query, latitude, longitude) VALUES ($1, $2, $3, $4);';
   let safeValues = [search_query, formatted_query, lat, lon];
 
   client.query(sql, safeValues);
@@ -48,24 +43,23 @@ app.get('/location', handler);
 
 function handler(req, res)
 {
-  let city = req.query.city; // input from user valid city
-
-
-  let searchString = 'SELECT * FROM cities WHERE search_query=$1;'; //if broken change back to city
+  let city = req.query.city; // input from user
+  let searchString = 'SELECT * FROM cities WHERE search_query=$1;';
   let safeValues = [city];
 
   client.query(searchString, safeValues).then(place =>
   {
-    console.log('place......', place);
-
-    if(place.rowCount > 0){
+    //
+    if(place.rowCount > 0)
+    {
+      console.log('place.rows[0]..........', place.rows[0]);
       res.send(place.rows[0]);
-
-    }else{
-
+    }else
+    {
       let url = 'https://us1.locationiq.com/v1/search.php';
 
-      let queryParams = {
+      let queryParams =
+      {
         key: process.env.GEOCODE_API_KEY,
         q: city,
         format: 'json',
@@ -79,14 +73,14 @@ function handler(req, res)
         adder(obj);
         res.send(obj);
 
-      }).catch((error)=> {
+      }).catch((error)=>
+      {
         console.log('ERROR:', error);
         res.status(500).send('There has been an error.. RUN!!!');
       });
     }
   })
 }
-
 //================= Weather ================
 app.get('/weather', (req, res) =>
 {
@@ -124,8 +118,8 @@ function hiking(req, res)
   let queryParams =
   {
     key: process.env.TRAIL_API_KEY,
-    lat: lattitude,
-    lon: longitude,
+    lat: req.query.latitude,
+    lon: req.query.longitude,
     maxResults: 10,
     format: 'json'
   }
@@ -175,8 +169,6 @@ function Location(input, locData)
   this.formatted_query = locData.display_name;
   this.latitude = locData.lat;
   this.longitude = locData.lon;
-  lattitude = locData.lat;
-  longitude = locData.lon;
 }
 
 // res.status(200).send(weatherArray);

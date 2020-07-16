@@ -1,42 +1,26 @@
 'use strict';
 
-const express = require('express');
-const cors = require('cors');
+const express = require('express'); //    add dependencies
 const superagent = require('superagent');
-const app = express();
-require('dotenv').config();
+const cors = require('cors');
 const pg = require('pg');
-//---------------------------------------
-const client = new pg.Client(process.env.DATABASE_URL)
+require('dotenv').config();
+const PORT = process.env.PORT || 3001; // set port in var
+const app = express(); //       put express in var to access
+const client = new pg.Client(process.env.DATABASE_URL) // setup database
+app.use(cors()); //             turn on cors
+
 client.on('error', err =>
 {
   console.log('Error was:', err)
 })
 
-//---------------------------------------
-app.use(cors());
-
-const PORT = process.env.PORT || 3001;
-
-client.connect().then(() =>
+client.connect().then(() => // connect to database
 {
-  app.listen(PORT, () => console.log(`listening 0n ${PORT}`));
+  app.listen(PORT, () => console.log(`listening 0n ${PORT}`)); //open port
 }).catch(err => console.log('Error connecting:', err))
 
-//========= add to database ==========
 
-function adder(obj)
-{
-  let search_query = obj.search_query;
-  let formatted_query = obj.formatted_query;
-  let lat = obj.latitude;
-  let lon = obj.longitude;
-
-  let sql = 'INSERT INTO cities (search_query, formatted_query, latitude, longitude) VALUES ($1, $2, $3, $4);';
-  let safeValues = [search_query, formatted_query, lat, lon];
-
-  client.query(sql, safeValues);
-}
 
 //========= location ==================
 app.get('/location', handler);
@@ -44,33 +28,34 @@ app.get('/location', handler);
 function handler(req, res)
 {
   let city = req.query.city; // input from user
-  let searchString = 'SELECT * FROM cities WHERE search_query=$1;';
-  let safeValues = [city];
-
+  let searchString = 'SELECT * FROM cities WHERE search_query=$1;'; //string to search db
+  let safeValues = [city]; // safeValues
+//                        // combine string with safe values and run string
   client.query(searchString, safeValues).then(place =>
   {
     // Got some amazing help from Chance here:
+    //if match is found item will be returned and rowCount will be 1 else 0
     if(place.rowCount > 0)
     {
-      res.send(place.rows[0]);
+      res.send(place.rows[0]); // send found data back to client
     }else
     {
-      let url = 'https://us1.locationiq.com/v1/search.php';
+      let url = 'https://us1.locationiq.com/v1/search.php'; //api url
 
-      let queryParams =
+      let queryParams = // query parameters
       {
         key: process.env.GEOCODE_API_KEY,
         q: city,
         format: 'json',
         limit: 1
       }
-
+      // combine url with query parameters then proccess data returned
       superagent.get(url).query(queryParams).then(results =>
       {
-        let locData = results.body[0];
-        const obj = new Location(city, locData);
-        adder(obj);
-        res.send(obj);
+        let locData = results.body[0]; //grab section needed from obj
+        const obj = new Location(city, locData); // create new obj with data
+        adder(obj); // add new data to db
+        res.send(obj); // return data to client
 
       }).catch((error)=>{
         console.log('ERROR:', error);
@@ -138,8 +123,21 @@ function hiking(req, res)
     res.status(500).send('There has been an error.. Hike!!!');
   });
 }
+//--------------------------------
+// function to add info from api to the table
+function adder(obj) // pass in object created by Location creator
+{ //                   set data from object to variables
+  let search_query = obj.search_query;
+  let formatted_query = obj.formatted_query;
+  let lat = obj.latitude;
+  let lon = obj.longitude;
+  //                        string to add data to db
+  let sql = 'INSERT INTO cities (search_query, formatted_query, latitude, longitude) VALUES ($1, $2, $3, $4);';
+  let safeValues = [search_query, formatted_query, lat, lon]; // safeValues
 
-//==============================================
+  client.query(sql, safeValues); // merge safeValues and 'sql' string then run string command
+}
+
 function Trails(nature)
 {
   this.name = nature.name;

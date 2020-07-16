@@ -7,5 +7,3 @@ CREATE TABLE cities (
   latitude NUMERIC(10,7),
   longitude NUMERIC(10,7)
 );
-
-INSERT INTO cities (search_query, formatted_query, latitude, longitude) VALUES ('seattle','Seattle, King County, Washington, USA','47.6038321','-122.3300624')

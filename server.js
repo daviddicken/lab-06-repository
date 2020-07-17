@@ -1,43 +1,48 @@
 'use strict';
-
-const express = require('express'); //    add dependencies
+//------ Libraries ---------------
+const express = require('express'); 
 const superagent = require('superagent');
 const cors = require('cors');
 const pg = require('pg');
 require('dotenv').config();
-const PORT = process.env.PORT || 3001; // set port in var
-const app = express(); //       put express in var to access
-const client = new pg.Client(process.env.DATABASE_URL) // setup database
-app.use(cors()); //             turn on cors
 
+//------ Global Variables ------
+const PORT = process.env.PORT || 3001;
+const app = express();
+const client = new pg.Client(process.env.DATABASE_URL)
+
+//------ Middleware -----------
+app.use(cors());
+
+//----- Listen for error -----
 client.on('error', err =>
 {
   console.log('Error was:', err)
 })
 
-client.connect().then(() => // connect to database
-{
-  app.listen(PORT, () => console.log(`listening 0n ${PORT}`)); //open port
-}).catch(err => console.log('Error connecting:', err))
+//------- Listeners ------------
+app.get('/location', locHandler);
+app.get('/weather', weatherHandler);
+app.get('/trails', hiking);
+app.get('/movies', movieHandler);
+app.get('/yelp', yelpHandler);
 
+//-------- Functions -----------
 
-
-//========= location ==================
-app.get('/location', handler);
-
-function handler(req, res)
+//======== Location ============
+function locHandler(req, res)
 {
   let city = req.query.city; // input from user
   let searchString = 'SELECT * FROM cities WHERE search_query=$1;'; //string to search db
-  let safeValues = [city]; // safeValues
-//                        // combine string with safe values and run string
+  let safeValues = [city];
+  // combine string with safe values and run string
   client.query(searchString, safeValues).then(place =>
   {
     // Got some amazing help from Chance here:
     //if match is found item will be returned and rowCount will be 1 else 0
     if(place.rowCount > 0)
     {
-      res.send(place.rows[0]); // send found data back to client
+      res.status(200).send(place.rows[0]); // send found data back to client
     }else
     {
       let url = 'https://us1.locationiq.com/v1/search.php'; //api url
@@ -67,8 +72,9 @@ function handler(req, res)
     res.status(500).send('There has been a error in the query...');
   })
 }
-//================= Weather ================
-app.get('/weather', (req, res) =>
+
+//======== Weather =============
+function weatherHandler(req, res)
 {
   let city = req.query.search_query;
   let url = 'http://api.weatherbit.io/v2.0/forecast/daily';
@@ -92,11 +98,8 @@ app.get('/weather', (req, res) =>
     console.log('ERROR:', error);
     res.status(500).send('There has been an error.. Rain!!!');
   });
-});
-
-//================= trails =====================
-app.get('/trails', hiking);
-
+}
+//======== Trails ==============
 function hiking(req, res)
 {
   let url = 'https://www.hikingproject.com/data/get-trails'
@@ -123,19 +126,67 @@ function hiking(req, res)
     res.status(500).send('There has been an error.. Hike!!!');
   });
 }
-//--------------------------------
-// function to add info from api to the table
-function adder(obj) // pass in object created by Location creator
-{ //                   set data from object to variables
-  let search_query = obj.search_query;
-  let formatted_query = obj.formatted_query;
-  let lat = obj.latitude;
-  let lon = obj.longitude;
-  //                        string to add data to db
-  let sql = 'INSERT INTO cities (search_query, formatted_query, latitude, longitude) VALUES ($1, $2, $3, $4);';
-  let safeValues = [search_query, formatted_query, lat, lon]; // safeValues
 
-  client.query(sql, safeValues); // merge safeValues and 'sql' string then run string command
+//======= Movies ==================
+
+function movieHandler(req, res)
+{
+  //console.log('movie request==========', req)
+  let url = 'https://api.themoviedb.org/3/movie/top_rated';
+  let queryParams=
+  {
+    api_key: process.env.MOVIE_API_KEY,
+    //total_results: 10, //don't think these two are working
+    format: 'json',
+  }
+
+  superagent.get(url).query(queryParams).then(list =>
+  {
+    const movieList = list.body.results.map(mov =>
+    {
+      return new Movies(mov);
+    }).catch((error)=> {
+      console.log('ERROR:', error);
+      res.status(500).send('There has been an error.. Catch a movie while we fix it!!!');
+    });
+
+    res.send(movieList);
+
+  })
+}
+
+//========== Yelp =================
+function yelpHandler(req, res)
+{
+  let url = 'https://api.yelp.com/v3/businesses/search';
+  let queryParams=
+  {
+    
+  }
+
+}
+
+//====== add object to database ===
+// make dynamic and pass in obj, tableName with search query string ... nevermind
+function adder(obj)
+{
+  let sql = 'INSERT INTO cities (search_query, formatted_query, latitude, longitude) VALUES ($1, $2, $3, $4);';
+  let safeValues = [obj.search_query, obj.formatted_query, obj.latitude, obj.longitude];
+
+  client.query(sql, safeValues);
+}
+
+//------- Consructors ---------
+function Movies(list)
+{
+  this.title = list.title;
+  this.overview = list.overview;
+  this.average_votes = list.vote_average;
+  this.total_votes = list.vote_count;
+  let path = 'https://image.tmdb.org/t/p/w500';
+  this.image_url = `${path}${list.poster_path}`;
+  this.popularity = list.popularity;
+  this.released_on = list.released_on;
 }
 
 function Trails(nature)
@@ -154,14 +205,12 @@ function Trails(nature)
   this.condition_time = splitter[1];
 }
 //--------------------------------------
-
 function Weather(info)
 {
   this.forecast = info.weather.description;
   this.time = new Date(info.valid_date).toDateString();
 }
 //---------------------------------------
-
 function Location(input, locData)
 {
   this.search_query = input;
@@ -175,3 +224,8 @@ function Location(input, locData)
 app.get('*', (req, res) => {
   res.status(404).send('Page not Found');
 });
+
+client.connect().then(() => // connect to database
+{
+  app.listen(PORT, () => console.log(`listening 0n ${PORT}`)); //open port
+}).catch(err => console.log('Error connecting:', err))

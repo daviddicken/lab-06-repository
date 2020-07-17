@@ -131,13 +131,13 @@ function hiking(req, res)
 
 function movieHandler(req, res)
 {
-  //console.log('movie request==========', req)
   let url = 'https://api.themoviedb.org/3/movie/top_rated';
   let queryParams=
   {
     api_key: process.env.MOVIE_API_KEY,
-    //total_results: 10, //don't think these two are working
     format: 'json',
+    longitude: req.query.longitude,
+    latitude: req.query.latitude
   }
 
   superagent.get(url).query(queryParams).then(list =>
@@ -145,24 +145,42 @@ function movieHandler(req, res)
     const movieList = list.body.results.map(mov =>
     {
       return new Movies(mov);
-    }).catch((error)=> {
-      console.log('ERROR:', error);
-      res.status(500).send('There has been an error.. Catch a movie while we fix it!!!');
-    });
-
+    })
     res.send(movieList);
 
-  })
+  })// .catch((error)=> {
+  //   console.log('ERROR:', error);
+  //   res.status(500).send('There has been an error.. Catch a movie while we fix it!!!');
+  // });
+
 }
 
 //========== Yelp =================
 function yelpHandler(req, res)
 {
+  const page = req.query.page || 1;
+  let pages = 5;
+  let start = ((page - 1) * pages + 1);
   let url = 'https://api.yelp.com/v3/businesses/search';
   let queryParams=
   {
-    
+    term: 'restaurants',
+    longitude: req.query.longitude,
+    latitude: req.query.latitude,
+    limit: pages,
+    offset: start,
+    format: 'json'
   }
+
+  superagent.get(url).set({'Authorization' : `Bearer ${process.env.YELP_API_KEY}`}).query(queryParams).then( yelper =>
+  {
+    const yelpReturn = yelper.body.businesses.map(item =>
+    {
+      return new Yelps(item);
+    })
+    console.log('Hi***********************************')
+    res.send(yelpReturn);
+  })
 
 }
 
@@ -177,6 +195,14 @@ function adder(obj)
 }
 
 //------- Consructors ---------
+function Yelps(yelpy)
+{
+  this.name = yelpy.name;
+  this.image_url = yelpy.image_url;
+  this.price = yelpy.price;
+  this.rating = yelpy.rating;
+  this.url = yelpy.url;
+}
 function Movies(list)
 {
   this.title = list.title;
@@ -217,6 +243,8 @@ function Location(input, locData)
   this.formatted_query = locData.display_name;
   this.latitude = locData.lat;
   this.longitude = locData.lon;
+  console.log('latitude================', this.latitude)
+  console.log('longitude================', this.longitude)
 }
 
 // res.status(200).send(weatherArray);
